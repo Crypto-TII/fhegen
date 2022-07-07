@@ -38,4 +38,16 @@ or any other format, please open an issue or send us an email to
 `johannes.mono (at) rub.de`.
 
 ## Cite
-Coming soon on ePrint...
+The accompanying paper is available on ePrint. For citations, please use the snippet below.
+
+```
+@misc{cryptoeprint:2022/706,
+      author = {Johannes Mono and Chiara Marcolla and Georg Land and Tim Güneysu and Najwa Aaraj},
+      title = {Finding and Evaluating Parameters for {BGV}},
+      howpublished = {Cryptology ePrint Archive, Paper 2022/706},
+      year = {2022},
+      note = {\url{https://eprint.iacr.org/2022/706}},
+      url = {https://eprint.iacr.org/2022/706}
+}
+```
+
