@@ -145,13 +145,16 @@ if __name__ == "__main__":
         t = util.genprime(2**(logt - 1), m, batch)
 
     q, logq = genq(m, *args)
-    sec     = max(util.estsecurity(m, logq, secret), 0)
 
     args = m, t, q, ops, keyswitch, omega, (Vs, Ve, D)
     if keyswitch in ['GHS', 'Hybrid']:
         _, logP = genP(*args)
     else:
         logP = None
+    if keyswitch == 'BV':
+        sec     = max(util.estsecurity(m, logq, secret), 0)
+    else:
+        sec     = max(util.estsecurity(m, logq+logP, secret), 0)
 
     if lib == 'HElib' and util.gcd(m, t) != 1:
         raise ValueError("HElib requires gcd(m, t) == 1")
