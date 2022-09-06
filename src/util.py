@@ -19,15 +19,15 @@ def phi(x):
 def estsecurity(m, logq, secret):
     d = phi(m)
     if secret == 'Ternary':
-        alpha = 128.06
-        beta  = 3.75
-        gamma = 16.51
+        alpha = 0.07
+        beta  = 0.34
+        gamma = 18.53
     elif secret == 'Error':
-        alpha = 0
-        beta  = 0
-        gamma = 0
+        alpha = 0.65
+        beta  = 0.53
+        gamma = 22.88
 
-    return -math.log2(alpha * logq / d**2) * beta * d / (math.log2(d) * logq) + gamma * math.sqrt(logq / d) * math.log2(d / logq)
+    return -math.log2(alpha * logq / d) * beta * d / (logq) + gamma * math.sqrt(logq / d) * math.log2(d / logq)
 
 
 def genprime(start, m=0, batch=False):
