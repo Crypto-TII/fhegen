@@ -2,18 +2,13 @@ import math
 import util
 
 
-def config(sec, m, t, q, logP=None, lib=None):
-    logq  = util.flog2(int(math.prod(q)))
-    logq0 = util.flog2(q[0])
-    logql = util.flog2(q[1])
-    logqL = util.flog2(q[-1])
-
+def config(sec, m, t, logq, logP=None, lib=None):
     print((
         "\nGenerated your BGV configuration!\n"
        f"sec:   {sec:.2f}\n"
        f"d:     {util.phi(m)}\n"
        f"t:     {t}\n"
-       f"logq:  {logq} ({logq0}, {logql}, {logqL})"))
+       f"logq:  {sum(logq)} ({logq[0]}, {logq[1]}, {logq[-1]})"))
     if logP:
         print(f"logP:  {logP}")
     if lib:
@@ -50,19 +45,25 @@ def fullbatch(lib):
 
 
 def getkeyswitch(lib):
-    r = input("Which key switching method do you prefer? [Hybrid/?]: ").lower()
+    r = input("Which key switching method do you prefer? [Hybrid-RNS/?]: ").lower()
 
     while True:
-        if r == '' or 'hybrid'.startswith(r):
-            return 'Hybrid'
+        if r == '' or 'hybrid-rns'.startswith(r):
+            return 'Hybrid-RNS'
         elif r == 'bv':
             return 'BV'
+        elif r == 'bv-rns':
+            return 'BV-RNS'
         elif r == 'ghs':
             return 'GHS'
+        elif r == 'ghs-rns':
+            return 'GHS-RNS'
+        elif 'hybrid'.startswith(r):
+            return 'Hybrid'
         elif r != '?':
             print("Invalid choice. ", end='')
 
-        print("Possible options are: Hybrid (default), BV, GHS.")
+        print("Possible options are: BV, BV-RNS, GHS, GHS-RNS, Hybrid, Hybrid-RNS (default).")
         r = input("Your choice: ").lower()
 
 

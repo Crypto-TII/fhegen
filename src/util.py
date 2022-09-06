@@ -18,6 +18,7 @@ def phi(x):
 
 def estsecurity(m, logq, secret):
     d = phi(m)
+
     if secret == 'Ternary':
         alpha = 0.07
         beta  = 0.34
