@@ -52,30 +52,18 @@ def fullbatch(lib):
 def getkeyswitch(lib):
     r = input("Which key switching method do you prefer? [Hybrid/?]: ").lower()
 
-    if lib == 'HElib':
-        while True:
-            if r == '' or 'hybrid'.startswith(r):
-                return 'Hybrid'
-            elif r == 'ghs':
-                return 'GHS'
-            elif r != '?':
-                print("Invalid choice. ", end='')
+    while True:
+        if r == '' or 'hybrid'.startswith(r):
+            return 'Hybrid'
+        elif r == 'bv':
+            return 'BV'
+        elif r == 'ghs':
+            return 'GHS'
+        elif r != '?':
+            print("Invalid choice. ", end='')
 
-            print("Possible options are: Hybrid (default), GHS.")
-            r = input("Your choice: ").lower()
-    else:
-        while True:
-            if r == '' or 'hybrid'.startswith(r):
-                return 'Hybrid'
-            elif r == 'bv':
-                return 'BV'
-            elif r == 'ghs':
-                return 'GHS'
-            elif r != '?':
-                print("Invalid choice. ", end='')
-
-            print("Possible options are: Hybrid (default), BV, GHS.")
-            r = input("Your choice: ").lower()
+        print("Possible options are: Hybrid (default), BV, GHS.")
+        r = input("Your choice: ").lower()
 
 
 def getlib():
@@ -84,14 +72,12 @@ def getlib():
     while True:
         if r in ['', 'n', 'no']:
             return None
-        elif r == 'helib':
-            return 'HElib'
         elif r == 'palisade':
             return 'PALISADE'
         elif r != '?':
             print("Invalid choice. ", end='')
 
-        print("Possible options are: No (default), HElib, PALISADE.")
+        print("Possible options are: No (default), PALISADE.")
         r = input("Your choice: ").lower()
 
 
@@ -148,9 +134,6 @@ def getrots():
 
 
 def getsecret(lib):
-    if lib == 'HElib':
-        return 'Ternary'
-
     r = input("Choose your secret distribution [Ternary/?]: ").lower()
 
     while True:

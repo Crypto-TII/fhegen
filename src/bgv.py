@@ -153,18 +153,13 @@ if __name__ == "__main__":
     else:
         logP = None
 
-    if lib == 'HElib' and util.gcd(m, t) != 1:
-        raise ValueError("HElib requires gcd(m, t) == 1")
     if lib == 'PALISADE' and t % m != 1:
         raise ValueError("PALISADE requires t % m == 1")
     if lib == 'PALISADE' and const:
         raise ValueError("PALISADE does not support scalar multiplication")
     interactive.config(sec, m, t, q, logP, lib)
 
-    if lib == 'HElib':
-        interactive.writelib(lib)
-        codegen.writehelib(m, t, logq, logP, ops, keyswitch, omega, D)
-    elif lib == 'PALISADE':
+    if lib == 'PALISADE':
         interactive.writelib(lib)
         if logP > 60:
             interactive.warnlogP()
