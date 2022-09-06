@@ -32,13 +32,13 @@ to be switched down from directly after encryption, and the bottom modulus is
 the modulus that is left before decrypting. The middle moduli are the other
 moduli in the middle.
 
-Note that due to some discrepancies with HElib and PALISADE internals,
-some parameter sets might not work. If you encounter such a parameter set,
-or any other format, please open an issue or send us an email to
-`johannes.mono (at) rub.de`.
+Note that due to some discrepancies with library internals, some parameter sets
+might not work as expected. If you encounter such a parameter set or have any
+other questions, open an issue or send an email to `johannes.mono (at) rub.de`.
 
 ## Cite
-The accompanying paper is available on ePrint. For citations, please use the snippet below.
+The accompanying paper is available on ePrint. For citations, please use
+the snippet below.
 
 ```
 @misc{cryptoeprint:2022/706,
@@ -50,4 +50,3 @@ The accompanying paper is available on ePrint. For citations, please use the sni
       url = {https://eprint.iacr.org/2022/706}
 }
 ```
-
