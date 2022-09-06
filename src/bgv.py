@@ -5,13 +5,11 @@ import math
 import util
 
 
-def bounds(d, t, Vs, Ve=3.2**2, D=6):
-    Bclean = D * t * math.sqrt(d * (1/12 + 2 * d * Vs * Ve + Ve))
-    Bks    = D * t * d * math.sqrt(Ve / 12)
-    Bscale = D * t * math.sqrt(d / 12 * (1 + d * Vs))
-    Bconst = D * t * math.sqrt(d / 12)
-
-    return Bclean, Bks, Bscale, Bconst
+class Bounds(d, t, Vs, Ve=3.2**2, D=6):
+    clean  = D * t * math.sqrt(d * (1/12 + 2 * d * Vs * Ve + Ve))
+    switch = D * t * d * math.sqrt(Ve / 12)
+    scale  = D * t * math.sqrt(d / 12 * (1 + d * Vs))
+    const  = D * t * math.sqrt(d / 12)
 
 
 def genq(m, t, logt, batch, ops, keyswitch, omega, bargs):
@@ -21,32 +19,32 @@ def genq(m, t, logt, batch, ops, keyswitch, omega, bargs):
         t = util.genprime(2**(logt - 1), m, batch)
 
     d = util.phi(m)
-    Bclean, Bks, Bscale, Bconst = bounds(d, t, *bargs)
-    q = [util.genprime(math.ceil(4 * Bscale), m, True)]
+    B = Bounds(d, t, *bargs)
+    q = [util.genprime(math.ceil(4 * B.scale), m, True)]
 
     xi = sums
     if const:
         xi *= Bconst**2
 
     if rots == 0:
-        q.append(util.genprime(math.ceil(4 * xi * Bscale), m, True))
+        q.append(util.genprime(math.ceil(4 * xi * B.scale), m, True))
     else: # rots > 0
         if keyswitch == 'BV':
-            parens = rots * omega * math.sqrt(muls + 1) * math.log(Bks, omega) * Bks + Bconst
+            parens = rots * omega * math.sqrt(muls + 1) * math.log(B.switch, omega) * B.switch + B.const
         else:
             parens = rots + Bconst
-        q.append(util.genprime(math.ceil(4 * sums**2 * Bconst * Bscale * parens), m, True))
+        q.append(util.genprime(math.ceil(4 * sums**2 * B.const * B.scale * parens), m, True))
     for _ in range(muls):
         q.append(util.genprime(q[-1], m, True))
 
     if rots == 0:
-        q.append(util.genprime(math.ceil(Bclean / Bscale), m, True))
+        q.append(util.genprime(math.ceil(B.clean / B.scale), m, True))
     else: # rots > 0
         if keyswitch == 'BV':
-            parens = 2 * rots * omega * math.sqrt(muls + 1) * math.log(Bks, omega) * Bks / Bconst + 1
+            parens = 2 * rots * omega * math.sqrt(muls + 1) * math.log(B.switch, omega) * B.switch / B.const + 1
         else:
-            parens = rots / Bconst + 1
-        q.append(util.genprime(math.ceil(Bclean / (parens * Bscale)), m, True))
+            parens = rots / B.const + 1
+        q.append(util.genprime(math.ceil(B.clean / (parens * B.scale)), m, True))
 
     return q, util.flog2(int(math.prod(q)))
 
@@ -77,15 +75,15 @@ def genP(m, t, q, ops, keyswitch, omega, bargs, k=10):
 
     d = util.phi(m)
     qneg2 = int(math.prod(q[:-1]))
-    Bclean, Bks, Bscale, Bconst = bounds(d, t, *bargs)
+    B = Bounds(d, t, *bargs)
 
     if keyswitch == 'GHS':
-        Pbound = k * qneg2 * Bks / Bscale
+        Pbound = k * qneg2 * B.switch / B.scale
         if rots == 0:
             Pbound /= q[-2]
         logP = util.clog2(Pbound)
     else: # keyswitch == 'Hybrid'
-        logP = util.clog2(k * omega * math.sqrt(math.log(qneg2, omega)) * Bks / Bscale)
+        logP = util.clog2(k * omega * math.sqrt(math.log(qneg2, omega)) * B.switch / B.scale)
 
     return None, logP
 
