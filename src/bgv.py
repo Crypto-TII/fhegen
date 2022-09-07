@@ -45,7 +45,7 @@ class Mods:
                 return 8 * lenP * xi * self.B.scale**2
         else:
             if keyswitch == 'BV':
-                return 2 * self.sum**2 * (4 * self.rot * omega * math.sqrt(self.mul) * logw(self.B.switch) * self.B.switch + self.B.const * self.B.scale)**2
+                return 8 * self.sum**2 * (2 * self.rot * omega * math.sqrt(self.mul) * logw(self.B.switch) * self.B.switch + self.B.const * self.B.scale)**2
             elif keyswitch == 'BV-RNS':
                 return 32 * self.sum**2 * self.rot**2 * (2 * self.mul + 1) * self.B.switch**2
             elif keyswitch in ['GHS', 'Hybrid']:
