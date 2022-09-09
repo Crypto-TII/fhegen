@@ -240,8 +240,8 @@ if __name__ == "__main__":
     logq, logP = genqP(m, t, M, keyswitch, omega)
     sec = max(util.estsecurity(m, sum(logq) + logP, secret), 0)
 
-    #if lib == 'PALISADE' and t % m != 1:
-    #    raise ValueError("PALISADE requires t % m == 1")
+    if lib == 'PALISADE' and t % m != 1:
+        raise ValueError("PALISADE requires t % m == 1")
     interactive.config(sec, m, t, logq, logP, lib)
 
     if lib == 'PALISADE':
