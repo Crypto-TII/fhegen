@@ -175,12 +175,13 @@ def writepalisade(m, t, logq0, logql, ops, keyswitch, omega=4, secret='Ternary',
     writemake(config.PALISADE_INCS, config.PALISADE_LIBS)
 
     muls, const, rots, sums = ops
+    msmany = logql // 60 + 1
     if const > 0:
         raise ValueError("const > 0")
 
     d       = util.phi(m)
     slots   = util.slots(m, t)
-    primes  = muls + 1
+    primes  = logq0 // 60 + msmany * muls + 2
     encrypt = 'ctx->ModReduce(ctx->Encrypt(keys.publicKey, pt));'
 
     if keyswitch == 'GHS':
@@ -204,8 +205,8 @@ def writepalisade(m, t, logq0, logql, ops, keyswitch, omega=4, secret='Ternary',
        f"{tabs}\t/* keyswitch method   */ {keyswitch.upper()},\n"
        f"{tabs}\t/* ring dimension     */ {d},\n"
        f"{tabs}\t/* omega HYBRID       */ {omega},\n"
-       f"{tabs}\t/* log2(p0)           */ {logq0},\n"
-       f"{tabs}\t/* log2(pl)           */ {logql},\n"
+       f"{tabs}\t/* log2(p0)           */ {logq0 % 60},\n"
+       f"{tabs}\t/* log2(pl)           */ {logql // msmany},\n"
        f"{tabs}\t/* omega BV           */ {omega},\n"
        f"{tabs}\t/* batch size         */ {slots},\n"
        f"{tabs}\t/* modswitch method   */ MANUAL);\n"
@@ -227,7 +228,7 @@ def writepalisade(m, t, logq0, logql, ops, keyswitch, omega=4, secret='Ternary',
        f"{tabs}\t\tint by = (i & 1) ^ (j & 1);\n"
        f"{tabs}\t\ttmp = ctx->EvalAtIndex(tmp, by);\n"
        f"{tabs}\t}}\n"
-       f"{tabs}\tct = ctx->ModReduce(tmp);\n"
+       f"{tabs}\tct = ctx->ModReduce(tmp);\n" ) + "".join([f"{tabs}\tct = ctx->ModReduce(ct);\n" for _ in range(msmany - 1)]) + (
        f"{tabs}}}\n\n"
        f"{tabs}Plaintext dec;\n"
        f"{tabs}ctx->Decrypt(keys.secretKey, ct, &dec);\n")
