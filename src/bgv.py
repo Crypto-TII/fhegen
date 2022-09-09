@@ -126,16 +126,14 @@ class Mods:
             elif keyswitch == 'Hybrid':
                 return K * omega * math.sqrt(logw(qlast)) * self.B.switch / self.B.scale
             else: # keyswitch == 'Hybrid-RNS'
-                return 4 * K * xi * math.sqrt(K * self.mul) * self.B.switch
+                return 4 * K * xi * math.sqrt(K * self.mul) * self.B.switch / self.B.scale
         else:
             if keyswitch == 'GHS':
                 return K * qlast * self.B.switch / self.B.scale
             elif keyswitch == 'GHS-RNS':
                 return K * qlast * math.sqrt(self.mul) * self.B.switch / self.B.scale
-            elif keyswitch == 'Hybrid':
-                return K * omega * math.sqrt(logw(qlast)) * self.B.switch / self.B.scale
-            else: # keyswitch == 'Hybrid-RNS'
-                return 4 * K * self.sum**2 * (self.rot + self.B.const) * math.sqrt(K * self.mul) * self.B.const * self.B.switch
+            else: # keyswitch in ['Hybrid', 'Hybrid-RNS']
+                return K * qlast**math.ceil(self.mul / omega) * math.sqrt(omega * self.mul) * self.B.switch / self.B.scale
 
 
 def genqP(m, t, M, keyswitch, omega, bits=64):
@@ -212,7 +210,7 @@ if __name__ == "__main__":
 
     batch     = False
     keyswitch = 'Hybrid'
-    omega     = 4
+    omega     = 3
     secret    = 'Ternary'
     sigma     = 3.2
     D         = 6
@@ -242,8 +240,8 @@ if __name__ == "__main__":
     logq, logP = genqP(m, t, M, keyswitch, omega)
     sec = max(util.estsecurity(m, sum(logq) + logP, secret), 0)
 
-    if lib == 'PALISADE' and t % m != 1:
-        raise ValueError("PALISADE requires t % m == 1")
+    #if lib == 'PALISADE' and t % m != 1:
+    #    raise ValueError("PALISADE requires t % m == 1")
     interactive.config(sec, m, t, logq, logP, lib)
 
     if lib == 'PALISADE':
