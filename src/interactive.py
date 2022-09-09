@@ -192,11 +192,11 @@ def gett():
         r = input("Your choice: ").lower()
 
     if t == None:
-        r = input("How many bits do you want at least for the plaintext modulus? [16/?]: ").lower()
+        r = input("How many bits do you want at least for the plaintext modulus? [4/?]: ").lower()
 
         while t == None and logt == None:
             if r == '':
-                logt = 16
+                logt = 4
                 break
             elif r.isdigit() and int(r) >= 2:
                 logt = int(r)
