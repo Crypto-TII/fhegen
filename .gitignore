@@ -2,3 +2,4 @@ a.out
 bench.cpp
 main.cpp
 Makefile
+__pycache__/
