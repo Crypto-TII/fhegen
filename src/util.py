@@ -9,6 +9,9 @@ def clog2(x):
 
 
 def flog2(x):
+    if x <= 0:
+        return 0
+
     return math.floor(math.log2(x))
 
 
