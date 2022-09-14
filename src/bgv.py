@@ -25,8 +25,13 @@ class Mods:
         self.bits = bits
 
     def first(self, keyswitch, omega, P=1):
+        if self.const == 0:
+            Bconst = 1
+        else:
+            Bconst = self.B.const
+
         logw = lambda x: math.log(x, omega)
-        xi = (self.sum * self.B.const)**2
+        xi = (self.sum * Bconst)**2
 
         if keyswitch not in ['BV', 'BV-RNS', 'GHS', 'GHS-RNS', 'Hybrid', 'Hybrid-RNS']:
             raise ValueError("keyswitch not in ['BV', 'BV-RNS', 'GHS', 'GHS-RNS', 'Hybrid', 'Hybrid-RNS']")
@@ -45,17 +50,22 @@ class Mods:
                 return 8 * lenP * xi * self.B.scale**2
         else:
             if keyswitch == 'BV':
-                return 8 * self.sum**2 * (2 * self.rot * omega * math.sqrt(self.mul) * logw(self.B.switch) * self.B.switch + self.B.const * self.B.scale)**2
+                return 8 * self.sum**2 * (2 * self.rot * omega * math.sqrt(self.mul) * logw(self.B.switch) * self.B.switch + Bconst * self.B.scale)**2
             elif keyswitch == 'BV-RNS':
                 return 32 * self.sum**2 * self.rot**2 * (2 * self.mul + 1) * self.B.switch**2
             elif keyswitch in ['GHS', 'Hybrid']:
-                return 8 * self.sum**2 * (self.rot + self.B.const)**2 * self.B.scale**2
+                return 8 * self.sum**2 * (self.rot + Bconst)**2 * self.B.scale**2
             else: # keyswitch in ['GHS-RNS', 'Hybrid-RNS']:
-                return 8 * lenP * self.sum**2 * (self.rot + self.B.const)**2 * self.B.scale**2
+                return 8 * lenP * self.sum**2 * (self.rot + Bconst)**2 * self.B.scale**2
 
     def middle(self, keyswitch, omega, P=1):
+        if self.const == 0:
+            Bconst = 1
+        else:
+            Bconst = self.B.const
+
         logw = lambda x: math.log(x, omega)
-        xi = (self.sum * self.B.const)**2
+        xi = (self.sum * Bconst)**2
 
         if keyswitch not in ['BV', 'BV-RNS', 'GHS', 'GHS-RNS', 'Hybrid', 'Hybrid-RNS']:
             raise ValueError("keyswitch not in ['BV', 'BV-RNS', 'GHS', 'GHS-RNS', 'Hybrid', 'Hybrid-RNS']")
@@ -74,17 +84,22 @@ class Mods:
                 return 4 * xi * math.sqrt(lenP) * self.B.scale
         else:
             if keyswitch == 'BV':
-                return self.sum**2 * self.B.const * (4 * self.rot * omega * math.sqrt(self.mul) * logw(self.B.switch) * self.B.switch + self.B.const * self.B.scale)
+                return self.sum**2 * Bconst * (4 * self.rot * omega * math.sqrt(self.mul) * logw(self.B.switch) * self.B.switch + Bconst * self.B.scale)
             elif keyswitch == 'BV-RNS':
-                return 4 * self.sum**2 * self.rot * math.sqrt(self.mul) * self.B.const * self.B.switch
+                return 4 * self.sum**2 * self.rot * math.sqrt(self.mul) * Bconst * self.B.switch
             elif keyswitch in ['GHS', 'Hybrid']:
-                return 4 * self.sum**2 * (self.rot + self.B.const) * self.B.const * self.B.scale
+                return 4 * self.sum**2 * (self.rot + Bconst) * Bconst * self.B.scale
             else: # keyswitch in ['GHS-RNS', 'Hybrid-RNS']:
-                return 4 * self.sum**2 * math.sqrt(lenP) * (self.rot + self.B.const) * self.B.const * self.B.scale
+                return 4 * self.sum**2 * math.sqrt(lenP) * (self.rot + Bconst) * Bconst * self.B.scale
 
     def last(self, keyswitch, omega, P=1):
+        if self.const == 0:
+            Bconst = 1
+        else:
+            Bconst = self.B.const
+
         logw = lambda x: math.log(x, omega)
-        xi = (self.sum * self.B.const)**2
+        xi = (self.sum * Bconst)**2
 
         if keyswitch not in ['BV', 'BV-RNS', 'GHS', 'GHS-RNS', 'Hybrid', 'Hybrid-RNS']:
             raise ValueError("keyswitch not in ['BV', 'BV-RNS', 'GHS', 'GHS-RNS', 'Hybrid', 'Hybrid-RNS']")
@@ -103,17 +118,22 @@ class Mods:
                 return self.B.clean / ((2 * math.sqrt(lenP) - 1) * self.B.scale)
         else:
             if keyswitch == 'BV':
-                return self.B.clean * self.B.const / (2 * self.rot * omega * math.sqrt(self.mul) * logw(self.B.switch) * self.B.switch)
+                return self.B.clean * Bconst / (2 * self.rot * omega * math.sqrt(self.mul) * logw(self.B.switch) * self.B.switch)
             elif keyswitch == 'BV-RNS':
                 return self.B.clean / (16 * self.sum**2 * self.rot**2 * self.mul * self.B.switch**2 - self.B.scale)
             elif keyswitch in ['GHS', 'Hybrid']:
-                return self.B.clean / ((self.rot / self.B.const + 1) * self.B.scale)
+                return self.B.clean / ((self.rot / Bconst + 1) * self.B.scale)
             else: # keyswitch in ['GHS-RNS', 'Hybrid-RNS']
-                return self.B.clean / ((math.sqrt(lenP) * (self.rot / self.B.const + 2) - 1) * self.B.scale)
+                return self.B.clean / ((math.sqrt(lenP) * (self.rot / Bconst + 2) - 1) * self.B.scale)
 
     def P(self, keyswitch, omega, qlast, K=100):
+        if self.const == 0:
+            Bconst = 1
+        else:
+            Bconst = self.B.const
+
         logw = lambda x: math.log(x, omega)
-        xi = (self.sum * self.B.const)**2
+        xi = (self.sum * Bconst)**2
 
         if keyswitch not in ['GHS', 'GHS-RNS', 'Hybrid', 'Hybrid-RNS']:
             raise ValueError("keyswitch not in ['GHS', 'GHS-RNS', 'Hybrid', 'Hybrid-RNS']")
