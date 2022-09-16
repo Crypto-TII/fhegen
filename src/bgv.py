@@ -9,6 +9,7 @@ class Bounds:
     def __init__(self, m, t, Vs, Ve=3.2**2, D=6):
         d = util.phi(m)
 
+        self.m      = m
         self.clean  = D * t * math.sqrt(d * (1/12 + 2 * d * Vs * Ve + Ve))
         self.switch = D * t * d * math.sqrt(Ve / 12)
         self.scale  = D * t * math.sqrt(d / 12 * (1 + d * Vs))
@@ -126,7 +127,7 @@ class Mods:
             else: # keyswitch in ['GHS-RNS', 'Hybrid-RNS']
                 return self.B.clean / ((math.sqrt(lenP) * (self.rot / Bconst + 2) - 1) * self.B.scale)
 
-    def P(self, keyswitch, omega, qlast, K=100):
+    def P(self, keyswitch, omega, logq, K=100):
         if self.const == 0:
             Bconst = 1
         else:
@@ -138,22 +139,30 @@ class Mods:
         if keyswitch not in ['GHS', 'GHS-RNS', 'Hybrid', 'Hybrid-RNS']:
             raise ValueError("keyswitch not in ['GHS', 'GHS-RNS', 'Hybrid', 'Hybrid-RNS']")
 
+        qLneg3 = 1
+        for bits in logq[:-2]:
+            qLneg3 *= util.genprime(2**bits, self.B.m, True)
+        pLneg2 = util.genprime(2**logq[-2], self.B.m, True)
+        qLneg2 = qLneg3 * pLneg2
+
         if self.rot == 0:
             if keyswitch == 'GHS':
-                return K * qlast * self.B.switch / self.B.scale
+                return K * qLneg3 * self.B.switch / self.B.scale
             elif keyswitch == 'GHS-RNS':
-                return K * qlast * math.sqrt(self.mul) * self.B.switch / self.B.scale
+                return K * qLneg3 * math.sqrt(self.mul) * self.B.switch / self.B.scale
             elif keyswitch == 'Hybrid':
-                return K * omega * math.sqrt(logw(qlast)) * self.B.switch / self.B.scale
+                return K * omega * math.sqrt(logw(qLneg2)) * self.B.switch / self.B.scale
             else: # keyswitch == 'Hybrid-RNS'
-                return 4 * K * xi * math.sqrt(K * self.mul) * self.B.switch / self.B.scale
+                return K * pLneg2**math.ceil(self.mul / omega) * math.sqrt(omega * self.mul) * self.B.switch / self.B.scale
         else:
             if keyswitch == 'GHS':
-                return K * qlast * self.B.switch / self.B.scale
+                return K * qLneg2 * self.B.switch / self.B.scale
             elif keyswitch == 'GHS-RNS':
-                return K * qlast * math.sqrt(self.mul) * self.B.switch / self.B.scale
-            else: # keyswitch in ['Hybrid', 'Hybrid-RNS']
-                return K * qlast**math.ceil(self.mul / omega) * math.sqrt(omega * self.mul) * self.B.switch / self.B.scale
+                return K * qLneg2 * math.sqrt(self.mul) * self.B.switch / self.B.scale
+            elif keyswitch == 'Hybrid':
+                return K * omega * math.sqrt(logw(qLneg2)) * self.B.switch / self.B.scale
+            else: # keyswitch == 'Hybrid-RNS'
+                return K * pLneg2**math.ceil(self.mul / omega) * math.sqrt(omega * self.mul) * self.B.switch / self.B.scale
 
 
 def genqP(m, t, M, keyswitch, omega, bits=64):
@@ -169,8 +178,7 @@ def genqP(m, t, M, keyswitch, omega, bits=64):
         logq.append(genp(M.middle))
     logq.append(genp(M.last))
 
-    qlast = util.genprime(2**logq[-1], m, True)
-    logP = util.flog2(M.P(keyswitch, omega, qlast))
+    logP = util.flog2(M.P(keyswitch, omega, logq))
     P = util.genprime(2**logP, m, False)
     genp = lambda x: util.flog2(x(keyswitch, omega, P))
 
