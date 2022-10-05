@@ -168,9 +168,9 @@ class Mods:
 def genqP(m, t, M, keyswitch, omega, bits=64):
     genp = lambda x: util.flog2(x(keyswitch, omega))
 
-    mul = M.mul
+    mul = M.mul - 1
     if keyswitch == 'BV-RNS':
-        mul = 2 * mul + 1
+        mul = 2 * mul + 2
 
     logq = [genp(M.first)]
     logq.append(genp(M.middle))
@@ -178,15 +178,16 @@ def genqP(m, t, M, keyswitch, omega, bits=64):
         logq.append(genp(M.middle))
     logq.append(genp(M.last))
 
-    logP = util.flog2(M.P(keyswitch, omega, logq))
-    P = util.genprime(2**logP, m, False)
-    genp = lambda x: util.flog2(x(keyswitch, omega, P))
+    for i in range(20):  
+        logP = util.flog2(M.P(keyswitch, omega, logq))
+        P = util.genprime(2**logP, m, False)
+        genp = lambda x: util.flog2(x(keyswitch, omega, P))
 
-    logq = [genp(M.first)]
-    logq.append(genp(M.middle))
-    for _ in range(mul):
+        logq = [genp(M.first)]
         logq.append(genp(M.middle))
-    logq.append(genp(M.last))
+        for _ in range(mul):
+            logq.append(genp(M.middle))
+        logq.append(genp(M.last))
 
     return logq, logP
 
