@@ -4,15 +4,23 @@ from sage.all import euler_phi, gcd
 from sage.all import Integer, Mod, Primes
 
 
-def clog2(x):
-    return math.ceil(math.log2(x))
+def ceil(x):
+    return int(math.ceil(x))
 
 
-def flog2(x):
+def clog(x, base=2):
+    return ceil(math.log(x, base))
+
+
+def csqrt(x):
+    return ceil(math.sqrt(x))
+
+
+def flog(x, base=2):
     if x <= 0:
         return 0
 
-    return math.floor(math.log2(x))
+    return int(math.floor(math.log(x, base)))
 
 
 def phi(x):
@@ -31,7 +39,8 @@ def estsecurity(m, logq, secret):
         beta  = 0.53
         gamma = 22.88
 
-    return -math.log2(alpha * logq / d) * beta * d / (logq) + gamma * math.sqrt(logq / d) * math.log2(d / logq)
+    est = -math.log2(alpha * logq / d) * beta * d / (logq) + gamma * math.sqrt(logq / d) * math.log2(d / logq)
+    return int(math.floor(est))
 
 
 def genprime(start, m=0, batch=False):

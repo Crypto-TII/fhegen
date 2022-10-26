@@ -5,12 +5,12 @@ import util
 def config(sec, m, t, logq, logP=None, lib=None):
     print((
         "\nGenerated your BGV configuration!\n"
-       f"sec:   {sec:.2f}\n"
+       f"sec:   {sec}\n"
        f"d:     {util.phi(m)}\n"
        f"t:     {t}\n"
-       f"logq:  {sum(logq)} ({logq[0]}, {logq[1]}, {logq[-1]})"))
+       f"qbits: {sum(logq)} ({logq[0]}, {logq[1]}, {logq[-1]})"))
     if logP:
-        print(f"logP:  {logP}")
+        print(f"Pbits: {logP}")
     if lib:
         print(f"slots: {util.slots(m, t)}")
 
