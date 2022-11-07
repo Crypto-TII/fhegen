@@ -120,8 +120,8 @@ class Mods:
         if keyswitch not in ['GHS', 'GHS-RNS', 'Hybrid', 'Hybrid-RNS']:
             raise ValueError("keyswitch not in ['GHS', 'GHS-RNS', 'Hybrid', 'Hybrid-RNS']")
 
-        qLneg3 = 2**sum(logq[:-2])
-        pLneg2 = 2**logq[-2]
+        qLneg3 = 2**(sum(logq[:-2]) - len(logq[:-2]))
+        pLneg2 = 2**(logq[-2] - 1)
         qLneg2 = qLneg3 * pLneg2
 
         if self.rot == 0:
