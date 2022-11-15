@@ -33,8 +33,7 @@ class Mods:
 
         if keyswitch.endswith('RNS'):
             lenP = util.ceil(math.log2(P) / self.bits)
-        else:
-            lenP = 1
+        lenP = max(lenP, 1)
         Bconst = 1 if self.const == 0 else self.B.const
         xi = (self.sum * Bconst)**2
 
@@ -55,7 +54,7 @@ class Mods:
             else:  # keyswitch in ['GHS-RNS', 'Hybrid-RNS']:
                 ret = 8 * lenP * self.sum**2 * (self.rot + Bconst)**2 * self.B.scale**2
 
-        return util.ceil(math.log2(ret)) if ret > 0 else 0
+        return util.ceil(math.log2(ret)) if ret > 1 else 0
 
     def middle(self, keyswitch, omega, P=1):
         if keyswitch not in ksw:
@@ -63,8 +62,7 @@ class Mods:
 
         if keyswitch.endswith('RNS'):
             lenP = util.ceil(math.log2(P) / self.bits)
-        else:
-            lenP = 1
+        lenP = max(lenP, 1)
         Bconst = 1 if self.const == 0 else self.B.const
         xi = (self.sum * Bconst)**2
 
@@ -85,7 +83,7 @@ class Mods:
             else:  # keyswitch in ['GHS-RNS', 'Hybrid-RNS']:
                 ret = 4 * self.sum**2 * math.sqrt(lenP) * (self.rot + Bconst) * Bconst * self.B.scale
 
-        return util.ceil(math.log2(ret)) if ret > 0 else 0
+        return util.ceil(math.log2(ret)) if ret > 1 else 0
 
     def last(self, keyswitch, omega, P=1):
         if keyswitch not in ksw:
@@ -93,8 +91,7 @@ class Mods:
 
         if keyswitch.endswith('RNS'):
             lenP = util.ceil(math.log2(P) / self.bits)
-        else:
-            lenP = 1
+        lenP = max(lenP, 1)
         Bconst = 1 if self.const == 0 else self.B.const
 
         if self.rot == 0:
@@ -114,7 +111,7 @@ class Mods:
             else:  # keyswitch in ['GHS-RNS', 'Hybrid-RNS']
                 ret = self.B.clean / ((math.sqrt(lenP) * (self.rot / Bconst + 2) - 1) * self.B.scale)
 
-        return util.ceil(math.log2(ret)) if ret > 0 else 0
+        return util.ceil(math.log2(ret)) if ret > 1 else 0
 
     def P(self, keyswitch, omega, logq, K=100):
         if keyswitch not in ['GHS', 'GHS-RNS', 'Hybrid', 'Hybrid-RNS']:
