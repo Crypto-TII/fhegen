@@ -1,3 +1,5 @@
+import bgv
+import codegen
 import math
 import util
 
@@ -28,7 +30,10 @@ def doconst():
         r = input("Your choice: ").lower()
 
 
-def fullbatch(lib):
+def fullbatch(lib, default=False):
+    if default:
+        return False
+
     if lib == 'PALISADE':
         return True
 
@@ -44,7 +49,10 @@ def fullbatch(lib):
         r = input("Your choice: ").lower()
 
 
-def getkeyswitch(lib):
+def getkeyswitch(lib, default=False):
+    if default:
+        return 'Hybrid-RNS'
+
     r = input("Which key switching method do you prefer? [Hybrid-RNS/?]: ").lower()
 
     while True:
@@ -108,7 +116,10 @@ def getmuls():
         r = input("Your choice: ")
 
 
-def getomega(keyswitch):
+def getomega(keyswitch, default=False):
+    if default:
+        return 4
+
     r = input(f"Choose your omega for {keyswitch} key switching [4]: ")
 
     while True:
@@ -122,7 +133,7 @@ def getomega(keyswitch):
 
 
 def getrots():
-    r = input(f"How many rotations do you want to perform? [0]: ")
+    r = input("How many rotations do you want to perform? [0]: ")
 
     while True:
         if r == '':
@@ -134,7 +145,10 @@ def getrots():
         r = input("Your choice: ")
 
 
-def getsecret(lib):
+def getsecret(lib, default=False):
+    if default:
+        return 'Ternary'
+
     r = input("Choose your secret distribution [Ternary/?]: ").lower()
 
     while True:
@@ -191,10 +205,10 @@ def gett():
         print("Please enter No (default) or an integer >= 2.")
         r = input("Your choice: ").lower()
 
-    if t == None:
+    if t is None:
         r = input("How many bits do you want at least for the plaintext modulus? [4/?]: ").lower()
 
-        while t == None and logt == None:
+        while t is None and logt is None:
             if r == '':
                 logt = 4
                 break
@@ -247,17 +261,72 @@ def usepow2():
     return True
 
 
-def warnlogP():
-    print((
-        "Warning: PALISADE does not support logP > 60. "
-        "However, due to the heuristic approach to generating the parameters, "
-        "they might still work. You can run our example (make && ./a.out) "
-        "for a first impression."))
-
-
 def welcome():
-    print("Welcome to the interactive parameter generator for BGV! :)\n")
+    print("Welcome to the interactive parameter generator! :)\n")
 
 
 def writelib(lib):
-    print(f"Generating Makefile, main.cpp and bench.cpp for {lib}.")
+    print(f"Generating an example using your configuration for {lib}.")
+
+
+def main():
+    welcome()
+    t, logt = gett()
+    secdef = 'Order/security' if t else 'Security/order'
+
+    if setsecurity(secdef, t):
+        m, sec = None, getsecurity()
+        pow2 = usepow2()
+    else:
+        m, sec = getm(), None
+    print()
+
+    muls = getmuls()
+    const = doconst()
+    rots = getrots()
+    sums = getsums()
+    lib = getlib()
+
+    if setadvanced():
+        print()
+        batch = fullbatch(lib)
+        secret = getsecret(lib)
+        keyswitch = getkeyswitch(lib)
+
+        if keyswitch in ['BV', 'BV-RNS', 'Hybrid', 'Hybrid-RNS']:
+            omega = getomega(keyswitch)
+        else:
+            omega = 1
+    else:
+        batch = fullbatch(default=True)
+        secret = getsecret(default=True)
+        keyswitch = getkeyswitch(default=True)
+        omega = getomega(default=True)
+
+    D = 6
+    sigma = 3.19
+    Ve = sigma * sigma
+    Vs = {'Ternary': 2 / 3, 'Error': Ve}[secret]
+
+    if not m:
+        m = bgv.genm(sec, t, logt, secret, (Vs, Ve, D), (muls, const, rots, sums), (keyswitch, omega))
+    if not t:
+        t = util.genprime(2**(logt - 1), m, batch)
+    B = bgv.Bounds(m, t, Vs, Ve, D)
+    M = bgv.Mods(B, muls, const, rots, sums)
+
+    logq, logP = bgv.genqP(m, t, M, keyswitch, omega)
+    sec = max(util.estsecurity(m, sum(logq) + logP, secret), 0)
+
+    if lib == 'PALISADE' and t % m != 1:
+        raise ValueError("PALISADE requires t % m == 1")
+    config(sec, m, t, logq, logP, lib)
+
+    if lib == 'PALISADE':
+        writelib(lib)
+        logql = max(logq[1], logq[-1])
+        codegen.writepalisade(m, t, logq[0], logql, (muls, const, rots, sums), keyswitch, omega, secret)
+
+
+if __name__ == "__main__":
+    main()

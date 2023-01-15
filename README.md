@@ -4,7 +4,7 @@ the Crypto Research Center at the Technology Innovation Institute and
 the Chair of Security Engineering at Ruhr University Bochum.
 
 ## Usage
-Interactive Mode: `python src/bgv.py`
+Interactive Mode: `python src/interactive.py`
 
 Feel free to browse the source code or open an issue if you encounter
 any problems with the generator.
