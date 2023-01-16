@@ -1,17 +1,16 @@
-import codegen
-import interactive
 import math
 import util
 
 
-ksw = ['BV', 'BV-RNS', 'GHS', 'GHS-RNS', 'Hybrid', 'Hybrid-RNS']
-
-
 class Bounds:
-    def __init__(self, m, t, Vs, Ve=3.2**2, D=6):
+    def __init__(self, m, t, Vs, Ve, D):
         d = util.phi(m)
-
         self.m = m
+        self.t = t
+        self.Vs = Vs
+        self.Ve = Ve
+        self.D = D
+
         self.clean = D * t * math.sqrt(d * (1 / 12 + 2 * d * Vs * Ve + Ve))
         self.switch = D * t * d * math.sqrt(Ve / 12)
         self.scale = D * t * math.sqrt(d / 12 * (1 + d * Vs))
@@ -19,169 +18,135 @@ class Bounds:
 
 
 class Mods:
-    def __init__(self, B, mul, const, rot, sum, bits=64):
-        self.B = B
+    def __init__(self, B, mul, const, rot, sum, keyswitch, omega, bits=64):
         self.mul = mul
         self.const = const
         self.rot = rot
         self.sum = sum
+        self.keyswitch = keyswitch
         self.bits = bits
+        self.omega = omega
 
-    def first(self, keyswitch, omega, P=1):
-        if keyswitch not in ksw:
-            raise ValueError(f"keyswitch not in {ksw}")
+        self.B = B
+        self.update(B.m, B.t)
 
-        if keyswitch.endswith('RNS'):
-            lenP = util.ceil(math.log2(P) / self.bits)
-        lenP = max(lenP, 1)
-        Bconst = 1 if self.const == 0 else self.B.const
-        xi = (self.sum * Bconst)**2
-
-        if self.rot == 0:
-            if keyswitch in ['BV', 'GHS', 'Hybrid']:
-                ret = 8 * xi * self.B.scale**2
-            elif keyswitch == 'BV-RNS':
-                ret = 8 * xi * (self.B.scale + math.sqrt(self.mul) * self.B.switch)**2
-            else:  # keyswitch in ['GHS-RNS', 'Hybrid-RNS']
-                ret = 8 * lenP * xi * self.B.scale**2
+    def _lenP(self, P=1):
+        if P is not None and self.keyswitch.endswith('RNS'):
+            return max(util.ceil(math.log2(P) / self.bits), 1)
         else:
-            if keyswitch == 'BV':
-                ret = 8 * self.sum**2 * (2 * self.rot * omega * math.sqrt(self.mul) * math.log(self.B.switch, omega) * self.B.switch + Bconst * self.B.scale)**2
-            elif keyswitch == 'BV-RNS':
-                ret = 32 * self.sum**2 * self.rot**2 * (2 * self.mul + 1) * self.B.switch**2
-            elif keyswitch in ['GHS', 'Hybrid']:
-                ret = 8 * self.sum**2 * (self.rot + Bconst)**2 * self.B.scale**2
-            else:  # keyswitch in ['GHS-RNS', 'Hybrid-RNS']:
-                ret = 8 * lenP * self.sum**2 * (self.rot + Bconst)**2 * self.B.scale**2
+            return 1
 
-        return util.ceil(math.log2(ret)) if ret > 1 else 0
+    def update(self, m, t):
+        self.B = Bounds(m, t, self.B.Vs, self.B.Ve, self.B.D)
+        self.Bclean = self.B.clean
+        self.Bswitch = self.B.switch
+        self.Bscale = self.B.scale
+        self.Bconst = 1 if self.const == 0 else self.B.const
+        self.depth = 2 * (self.mul + 1) if self.keyswitch == 'BV' and self.rot != 0 else self.mul + 1
+        self.xi = (self.sum * self.Bconst)**2
 
-    def middle(self, keyswitch, omega, P=1):
-        if keyswitch not in ksw:
-            raise ValueError(f"keyswitch not in {ksw}")
-
-        if keyswitch.endswith('RNS'):
-            lenP = util.ceil(math.log2(P) / self.bits)
-        lenP = max(lenP, 1)
-        Bconst = 1 if self.const == 0 else self.B.const
-        xi = (self.sum * Bconst)**2
-
+    def first(self, P):
+        factor = 1
         if self.rot == 0:
-            if keyswitch in ['BV', 'GHS', 'Hybrid']:
-                ret = 4 * xi * self.B.scale
-            elif keyswitch == 'BV-RNS':
-                ret = 4 * xi * (self.B.scale + math.sqrt(self.mul) * self.B.switch)
-            else:  # keyswitch in ['GHS-RNS', 'Hybrid-RNS']
-                return 4 * xi * math.sqrt(lenP) * self.B.scale
+            factor = 8 * self.xi
         else:
-            if keyswitch == 'BV':
-                ret = self.sum**2 * Bconst * (4 * self.rot * omega * math.sqrt(self.mul) * math.log(self.B.switch, omega) * self.B.switch + Bconst * self.B.scale)
-            elif keyswitch == 'BV-RNS':
-                ret = 4 * self.sum**2 * self.rot * math.sqrt(self.mul) * Bconst * self.B.switch
-            elif keyswitch in ['GHS', 'Hybrid']:
-                ret = 4 * self.sum**2 * (self.rot + Bconst) * Bconst * self.B.scale
-            else:  # keyswitch in ['GHS-RNS', 'Hybrid-RNS']:
-                ret = 4 * self.sum**2 * math.sqrt(lenP) * (self.rot + Bconst) * Bconst * self.B.scale
+            factor = 8 * self.sum**2
+        if self.keyswitch == 'BV' and self.rot != 0:
+            factor *= 4 * (self.depth - 1)
+        if self.keyswitch in ['GHS-RNS', 'Hybrid-RNS']:
+            factor *= self._lenP(P)
 
-        return util.ceil(math.log2(ret)) if ret > 1 else 0
+        B = 1
+        if self.keyswitch == 'BV-RNS' and self.rot == 0:
+            B = self.Bscale + math.sqrt(self.depth - 1) * self.Bswitch
+        elif self.keyswitch == 'BV-RNS' and self.rot != 0:
+            B = self.Bswitch
+        elif self.keyswitch == 'BV' and self.rot != 0:
+            B = 2 * self.rot * self.omega * math.sqrt(self.depth - 1)
+            B *= math.log(self.Bswitch, self.omega) * self.Bswitch
+            B += self.Bconst * self.Bscale
+        elif self.rot != 0:
+            B = (self.rot + self.Bconst) * self.Bscale
+        else:
+            B = self.Bscale
 
-    def last(self, keyswitch, omega, P=1):
-        if keyswitch not in ksw:
-            raise ValueError(f"keyswitch not in {ksw}")
+        B = factor * B**2
+        return util.ceil(math.log2(B)) if B > 1 else 0
 
-        if keyswitch.endswith('RNS'):
-            lenP = util.ceil(math.log2(P) / self.bits)
-        lenP = max(lenP, 1)
-        Bconst = 1 if self.const == 0 else self.B.const
-
+    def middle(self, P=1):
+        factor = 1
         if self.rot == 0:
-            if keyswitch in ['BV', 'GHS', 'Hybrid']:
-                ret = self.B.clean / self.B.scale
-            elif keyswitch == 'BV-RNS':
-                ret = self.B.clean / (self.B.scale + 2 * math.sqrt(self.mul) * self.B.switch)
-            else:  # keyswitch in ['GHS-RNS', 'Hybrid-RNS']
-                ret = self.B.clean / ((2 * math.sqrt(lenP) - 1) * self.B.scale)
+            factor = 4 * self.xi
         else:
-            if keyswitch == 'BV':
-                ret = self.B.clean * Bconst / (2 * self.rot * omega * math.sqrt(self.mul) * math.log(self.B.switch, omega) * self.B.switch)
-            elif keyswitch == 'BV-RNS':
-                ret = self.B.clean / (16 * self.sum**2 * self.rot**2 * self.mul * self.B.switch**2 - self.B.scale)
-            elif keyswitch in ['GHS', 'Hybrid']:
-                ret = self.B.clean / ((self.rot / Bconst + 1) * self.B.scale)
-            else:  # keyswitch in ['GHS-RNS', 'Hybrid-RNS']
-                ret = self.B.clean / ((math.sqrt(lenP) * (self.rot / Bconst + 2) - 1) * self.B.scale)
+            factor = 4 * self.sum
+        if self.keyswitch == 'BV' and self.rot != 0:
+            factor /= 4
+        if self.keyswitch in ['GHS-RNS', 'Hybrid-RNS']:
+            factor *= math.sqrt(self._lenP(P))
 
-        return util.ceil(math.log2(ret)) if ret > 1 else 0
+        B = 1
+        if self.keyswitch == 'BV-RNS' and self.rot == 0:
+            B = self.Bscale + math.sqrt(self.depth - 1) * self.Bswitch
+        elif self.keyswitch == 'BV-RNS' and self.rot != 0:
+            B = self.rot * math.sqrt(self.depth - 1) * self.Bconst * self.Bswitch
+        elif self.keyswitch == 'BV' and self.rot != 0:
+            B = 4 * self.rot * self.omega * math.sqrt(self.depth - 1)
+            B *= math.log(self.Bswitch, self.omega) * self.Bswitch
+            B += self.Bconst * self.Bscale
+            B *= self.Bconst
+        elif self.rot == 0:
+            B = self.Bscale
+        else:
+            B = (self.rot + self.Bconst) * self.Bconst * self.Bscale
 
-    def P(self, keyswitch, omega, logq, K=100):
-        if keyswitch not in ['GHS', 'GHS-RNS', 'Hybrid', 'Hybrid-RNS']:
-            raise ValueError("keyswitch not in ['GHS', 'GHS-RNS', 'Hybrid', 'Hybrid-RNS']")
+        B = factor * B
+        return util.ceil(math.log2(B)) if B > 1 else 0
 
+    def last(self, P=1):
+        num = self.Bclean
+        if self.keyswitch == 'BV' and self.rot != 0:
+            num *= self.Bconst
+
+        div = self.Bscale
+        if self.keyswitch == 'BV-RNS' and self.rot == 0:
+            div += 2 * math.sqrt(self.depth - 1) * self.Bswitch
+        elif self.keyswitch == 'BV-RNS' and self.rot != 0:
+            div = 16 * self.sum**2 * self.rot**2 * (self.depth - 1)
+            div = div * self.Bswitch**2 - self.Bscale
+        elif self.keyswitch == 'BV' and self.rot != 0:
+            div = 2 * self.rot * self.omega * math.sqrt(self.depth - 1)
+            div *= math.log(self.Bswitch, self.omega) * self.Bswitch
+        elif self.keyswitch in ['GHS-RNS', 'Hybrid-RNS'] and self.rot == 0:
+            div *= 2 * math.sqrt(self._lenP(P)) - 1
+        elif self.keyswitch in ['GHS-RNS', 'Hybrid-RNS'] and self.rot != 0:
+            div *= math.sqrt(self._lenP(P)) * ((self.rot / self.Bconst + 2) - 1)
+        elif self.keyswitch in ['GHS', 'Hybrid'] and self.rot != 0:
+            div *= self.rot / self.Bconst + 1
+
+        B = num / div
+        return util.ceil(math.log2(B)) if B > 1 else 0
+
+    def switch(self, logq, K=100):
         qLneg3 = 2**(sum(logq[:-2]) - len(logq[:-2]))
         pLneg2 = 2**(logq[-2] - 1)
         qLneg2 = qLneg3 * pLneg2
 
-        if self.rot == 0:
-            if keyswitch == 'GHS':
-                ret = K * qLneg3 * util.ceil(self.B.switch) // util.ceil(self.B.scale)
-            elif keyswitch == 'GHS-RNS':
-                ret = K * qLneg3 * util.ceil(math.sqrt(self.mul)) * util.ceil(self.B.switch) // util.ceil(self.B.scale)
-            elif keyswitch == 'Hybrid':
-                ret = K * omega * util.ceil(math.sqrt(math.log(qLneg2, omega))) * util.ceil(self.B.switch) // util.ceil(self.B.scale)
-            else:  # keyswitch == 'Hybrid-RNS'
-                ret = K * pLneg2**util.ceil(self.mul / omega) * util.ceil(math.sqrt(omega * self.mul)) * util.ceil(self.B.switch) // util.ceil(self.B.scale)
+        factor = 1
+        if self.keyswitch in ['GHS', 'GHS-RNS'] and self.rot == 0:
+            factor = K * qLneg3
+        elif self.keyswitch in ['GHS', 'GHS-RNS'] and self.rot != 0:
+            factor = K * qLneg2
         else:
-            if keyswitch == 'GHS':
-                ret = K * qLneg2 * util.ceil(self.B.switch) // util.ceil(self.B.scale)
-            elif keyswitch == 'GHS-RNS':
-                ret = K * qLneg2 * util.ceil(math.sqrt(self.mul)) * util.ceil(self.B.switch) // util.ceil(self.B.scale)
-            elif keyswitch == 'Hybrid':
-                ret = K * omega * util.ceil(math.sqrt(math.log(qLneg2, omega))) * util.ceil(self.B.switch) // util.ceil(self.B.scale)
-            else:  # keyswitch == 'Hybrid-RNS'
-                ret = K * pLneg2**util.ceil(self.mul / omega) * util.ceil(math.sqrt(omega * self.mul)) * util.ceil(self.B.switch) // util.ceil(self.B.scale)
+            factor = K
+        if self.keyswitch == 'GHS-RNS' and self.rot == 0:
+            factor *= math.sqrt(self.depth - 2)
+        if self.keyswitch == 'GHS-RNS' and self.rot != 0:
+            factor *= math.sqrt(self.depth - 1)
+        if self.keyswitch == 'Hybrid-RNS':
+            factor *= pLneg2**util.ceil(self.depth / self.omega)
+            factor *= math.sqrt(self.omega * (self.depth - 1))
+        if self.keyswitch == 'Hybrid':
+            factor *= self.omega * math.sqrt(math.log(qLneg2, self.omega))
 
-        return util.ceil(math.log2(ret)) if ret > 0 else 0
-
-
-def genqP(m, t, M, keyswitch, omega, bits=64):
-    mul = M.mul - 1
-    if keyswitch == 'BV-RNS':
-        mul = 2 * mul + 2
-
-    logq = [M.first(keyswitch, omega)]
-    for _ in range(mul):
-        logq.append(M.middle(keyswitch, omega))
-    logq.append(M.last(keyswitch, omega))
-
-    for i in range(20):
-        logP = M.P(keyswitch, omega, logq)
-        logq = [M.first(keyswitch, omega, 2**logP)]
-        for _ in range(mul):
-            logq.append(M.middle(keyswitch, omega, 2**logP))
-        logq.append(M.last(keyswitch, omega, 2**logP))
-
-    return logq, logP
-
-
-def genm(sec, t, logt, secret, Bargs, Margs, qPargs, pow2=True):
-    gent = True if not t else False
-    m = 4
-
-    while True:
-        if gent:
-            t = util.genprime(2**(logt - 1), m, batch)
-        B = Bounds(m, t, *Bargs)
-        M = Mods(B, *Margs)
-
-        logq, logP = genqP(m, t, M, *qPargs)
-        est = util.estsecurity(m, sum(logq) + logP, secret)
-
-        if est > sec:
-            break
-
-        m <<= 1
-
-    if pow2:
-        return m
-
-    raise NotImplementedError("pow2 == False")
+        B = factor * util.ceil(self.Bswitch) // util.ceil(self.Bscale)
+        return util.ceil(math.log2(B)) if B > 1 else 0

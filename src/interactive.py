@@ -1,6 +1,8 @@
+import bfv
 import bgv
 import codegen
 import math
+import params
 import util
 
 
@@ -31,11 +33,11 @@ def doconst():
 
 
 def fullbatch(lib, default=False):
-    if default:
-        return False
-
     if lib == 'PALISADE':
         return True
+
+    if default:
+        return False
 
     r = input("Do you want to use full batching with your plaintext modulus? [N/y]: ").lower()
 
@@ -143,6 +145,24 @@ def getrots():
 
         print("Invalid choice. Please enter an integer >= 0 (default 0).")
         r = input("Your choice: ")
+
+
+def getscheme():
+    # TODO: add support for BFV
+    return 'BGV'
+
+    r = input("Which scheme do you want to generate paramters for? [BGV/BFV/?]: ").lower()
+
+    while True:
+        if r == '' or 'bgv'.startswith:
+            return 'BGV'
+        elif 'bfv'.startswith(r):
+            return 'BFV'
+        elif r != '?':
+            print("Invalid choice. ", end='')
+
+        print("Possible options are: BGV (default), BFV.")
+        r = input("Your choice: ").lower()
 
 
 def getsecret(lib, default=False):
@@ -271,6 +291,12 @@ def writelib(lib):
 
 def main():
     welcome()
+    scheme = getscheme()
+    if scheme == 'BGV':
+        scheme = bgv
+    elif scheme == 'BFV':
+        scheme = bfv
+
     t, logt = gett()
     secdef = 'Order/security' if t else 'Security/order'
 
@@ -287,6 +313,11 @@ def main():
     sums = getsums()
     lib = getlib()
 
+    batch = fullbatch(lib, default=True)
+    secret = getsecret(lib, default=True)
+    keyswitch = getkeyswitch(lib, default=True)
+    omega = getomega(lib, default=True)
+
     if setadvanced():
         print()
         batch = fullbatch(lib)
@@ -295,27 +326,26 @@ def main():
 
         if keyswitch in ['BV', 'BV-RNS', 'Hybrid', 'Hybrid-RNS']:
             omega = getomega(keyswitch)
-        else:
-            omega = 1
-    else:
-        batch = fullbatch(default=True)
-        secret = getsecret(default=True)
-        keyswitch = getkeyswitch(default=True)
-        omega = getomega(default=True)
 
     D = 6
     sigma = 3.19
     Ve = sigma * sigma
     Vs = {'Ternary': 2 / 3, 'Error': Ve}[secret]
 
+    genm = False
     if not m:
-        m = bgv.genm(sec, t, logt, secret, (Vs, Ve, D), (muls, const, rots, sums), (keyswitch, omega))
-    if not t:
-        t = util.genprime(2**(logt - 1), m, batch)
-    B = bgv.Bounds(m, t, Vs, Ve, D)
-    M = bgv.Mods(B, muls, const, rots, sums)
+        genm = True
+        m = 4
+    tmp = params.gent(m, logt, batch) if not t else t
+    bounds = scheme.Bounds(m, tmp, Vs, Ve, D)
+    mods = scheme.Mods(bounds, muls, const, rots, sums, keyswitch, omega)
 
-    logq, logP = bgv.genqP(m, t, M, keyswitch, omega)
+    logq, logP = [], 0
+    if genm:
+        m, t, logq, logP = params.genm(sec, t, logt, batch, mods, secret, pow2)
+    else:
+        t = tmp
+        logq, logP = params.genqP(mods)
     sec = max(util.estsecurity(m, sum(logq) + logP, secret), 0)
 
     if lib == 'PALISADE' and t % m != 1:
