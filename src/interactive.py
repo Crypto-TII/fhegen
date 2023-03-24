@@ -2,17 +2,22 @@ import bfv
 import bgv
 import codegen
 import math
-import params
 import util
 
 
-def config(sec, m, t, logq, logP=None, lib=None):
+def pconfig(scheme, model, sec, m, t, logq, logP=None, lib=None):
     print((
-        "\nGenerated your BGV configuration!\n"
-       f"sec:   {sec}\n"
-       f"d:     {util.phi(m)}\n"
-       f"t:     {t}\n"
-       f"qbits: {sum(logq)} ({logq[0]}, {logq[1]}, {logq[-1]})"))
+        f"\nGenerated your {scheme} configuration!\n"
+        f"model: {model}\n"
+        f"sec:   {sec}\n"
+        f"d:     {util.phi(m)}\n"
+        f"t:     {t}"))
+
+    if len(logq) > 1:
+        print(f"qbits: {sum(logq)} ({logq[0]}, {logq[1]}, {logq[-1]})")
+    else:
+        print(f"qbits: {logq[0]}")
+
     if logP:
         print(f"Pbits: {logP}")
     if lib:
@@ -33,9 +38,6 @@ def doconst():
 
 
 def fullbatch(lib, default=False):
-    if lib == 'PALISADE':
-        return True
-
     if default:
         return False
 
@@ -51,8 +53,24 @@ def fullbatch(lib, default=False):
         r = input("Your choice: ").lower()
 
 
+def getbeta(lib, keyswitch, default=False):
+    if default or lib:
+        return 2**10
+
+    r = input(f"Choose your beta for {keyswitch} key switching [2^10]: ")
+
+    while True:
+        if r == '':
+            return 2**10
+        elif r.isdigit() and int(r) > 1:
+            return int(r)
+
+        print("Invalid choice. Please enter an integer > 0 (default 2^10).")
+        r = input("Your choice: ")
+
+
 def getkeyswitch(lib, default=False):
-    if default:
+    if default or lib:
         return 'Hybrid-RNS'
 
     r = input("Which key switching method do you prefer? [Hybrid-RNS/?]: ").lower()
@@ -83,12 +101,16 @@ def getlib():
     while True:
         if r in ['', 'n', 'no']:
             return None
+        elif r == 'openfhe':
+            return 'OpenFHE'
         elif r == 'palisade':
             return 'PALISADE'
+        elif r == 'seal':
+            return 'SEAL'
         elif r != '?':
             print("Invalid choice. ", end='')
 
-        print("Possible options are: No (default), PALISADE.")
+        print("Possible options are: No (default), OpenFHE, PALISADE, SEAL.")
         r = input("Your choice: ").lower()
 
 
@@ -105,6 +127,25 @@ def getm():
         r = input("Your choice: ")
 
 
+def getmodel():
+    r = input("Which circuit model do you want to use? [Base]: ").lower()
+
+    while True:
+        if r == '' or 'base'.startswith(r):
+            return 'Base'
+        elif r == '1' or 'model1'.startswith(r):
+            return 'Model1'
+        elif r == '2' or 'model2'.startswith(r):
+            return 'Model2'
+        elif 'openfhe'.startswith(r):
+            return 'OpenFHE'
+        elif r != '?':
+            print("Invalid choice. ", end='')
+
+        print("Possible options are: Base (default), Model1, Model2, OpenFHE.")
+        r = input("Your choice: ").lower()
+
+
 def getmuls():
     r = input("How many multiplications do you want to perform? [2]: ")
 
@@ -118,19 +159,19 @@ def getmuls():
         r = input("Your choice: ")
 
 
-def getomega(keyswitch, default=False):
-    if default:
-        return 4
+def getomega(lib, keyswitch, default=False):
+    if default or lib:
+        return 3
 
-    r = input(f"Choose your omega for {keyswitch} key switching [4]: ")
+    r = input(f"Choose your omega for {keyswitch} key switching [3]: ")
 
     while True:
         if r == '':
-            return 4
+            return 3
         elif r.isdigit() and int(r) > 0:
             return int(r)
 
-        print("Invalid choice. Please enter an integer > 0 (default 4).")
+        print("Invalid choice. Please enter an integer > 0 (default 3).")
         r = input("Your choice: ")
 
 
@@ -148,13 +189,10 @@ def getrots():
 
 
 def getscheme():
-    # TODO: add support for BFV
-    return 'BGV'
-
-    r = input("Which scheme do you want to generate paramters for? [BGV/BFV/?]: ").lower()
+    r = input("Which scheme do you want to generate paramters for? [BGV/?]: ").lower()
 
     while True:
-        if r == '' or 'bgv'.startswith:
+        if r == '' or 'bgv'.startswith(r):
             return 'BGV'
         elif 'bfv'.startswith(r):
             return 'BFV'
@@ -165,7 +203,7 @@ def getscheme():
         r = input("Your choice: ").lower()
 
 
-def getsecret(lib, default=False):
+def getsdist(lib, default=False):
     if default:
         return 'Ternary'
 
@@ -226,11 +264,11 @@ def gett():
         r = input("Your choice: ").lower()
 
     if t is None:
-        r = input("How many bits do you want at least for the plaintext modulus? [4/?]: ").lower()
+        r = input("How many bits do you want at least for the plaintext modulus? [17/?]: ").lower()
 
         while t is None and logt is None:
             if r == '':
-                logt = 4
+                logt = 17
                 break
             elif r.isdigit() and int(r) >= 2:
                 logt = int(r)
@@ -238,7 +276,7 @@ def gett():
             elif r != '?':
                 print("Invalid choice. ", end='')
 
-            print("Please enter an integer >= 2 (default 16).")
+            print("Please enter an integer >= 2 (default 17).")
             r = input("Your choice: ").lower()
     else:
         logt = math.floor(math.log2(t))
@@ -291,11 +329,12 @@ def writelib(lib):
 
 def main():
     welcome()
-    scheme = getscheme()
-    if scheme == 'BGV':
+    schemename = getscheme()
+    if schemename == 'BGV':
         scheme = bgv
-    elif scheme == 'BFV':
+    elif schemename == 'BFV':
         scheme = bfv
+    model = getmodel()
 
     t, logt = gett()
     secdef = 'Order/security' if t else 'Security/order'
@@ -314,48 +353,136 @@ def main():
     lib = getlib()
 
     batch = fullbatch(lib, default=True)
-    secret = getsecret(lib, default=True)
+    sdist = getsdist(lib, default=True)
     keyswitch = getkeyswitch(lib, default=True)
-    omega = getomega(lib, default=True)
+    omega = getomega(lib, keyswitch, default=True)
+    beta = getbeta(lib, keyswitch, default=True)
 
     if setadvanced():
         print()
         batch = fullbatch(lib)
-        secret = getsecret(lib)
+        sdist = getsdist(lib)
         keyswitch = getkeyswitch(lib)
 
-        if keyswitch in ['BV', 'BV-RNS', 'Hybrid', 'Hybrid-RNS']:
-            omega = getomega(keyswitch)
+        if keyswitch in ['BV', 'BV-RNS', 'Hybrid']:
+            beta = getbeta(lib, keyswitch)
+        if keyswitch in ['Hybrid-RNS']:
+            omega = getomega(lib, keyswitch)
 
-    D = 6
     sigma = 3.19
     Ve = sigma * sigma
-    Vs = {'Ternary': 2 / 3, 'Error': Ve}[secret]
+    Vs = {'Ternary': 2 / 3, 'Error': Ve}[sdist]
 
     genm = False
     if not m:
         genm = True
         m = 4
-    tmp = params.gent(m, logt, batch) if not t else t
-    bounds = scheme.Bounds(m, tmp, Vs, Ve, D)
-    mods = scheme.Mods(bounds, muls, const, rots, sums, keyswitch, omega)
 
-    logq, logP = [], 0
+    gent = False
+    if not t:
+        gent = True
+        t = util.gent(m, gent, t, logt, batch)
+
+    ops = {'model': model, 'muls': muls, 'const': const, 'rots': rots, 'sums': sums}
+    targs = {'gen': gent, 't': t, 'logt': logt, 'batch': batch}
+    Bargs = {'m': m, 't': t, 'D': 6, 'Vs': Vs, 'Ve': Ve}
+    kswargs = {'method': keyswitch, 'L': muls + 1, 'beta': beta, 'omega': omega}
+
     if genm:
-        m, t, logq, logP = params.genm(sec, t, logt, batch, mods, secret, pow2)
+        if not pow2:
+            raise NotImplementedError("pow2 == False")
+
+        while True:
+            logq, logP = scheme.logqP(ops, Bargs, kswargs, sdist)
+            if util.estsecurity(m, sum(logq) + logP, sdist) > sec:
+                break
+
+            m <<= 1
+            Bargs['m'] = m
+
+            t = util.gent(m, **targs)
+            targs['t'] = t
+            Bargs['t'] = t
     else:
-        t = tmp
-        logq, logP = params.genqP(mods)
-    sec = max(util.estsecurity(m, sum(logq) + logP, secret), 0)
+        logq, logP = scheme.logqP(ops, Bargs, kswargs, sdist)
 
-    if lib == 'PALISADE' and t % m != 1:
-        raise ValueError("PALISADE requires t % m == 1")
-    config(sec, m, t, logq, logP, lib)
+    sec = util.estsecurity(m, sum(logq) + logP, sdist)
+    pconfig(schemename, model, sec, m, t, logq, logP, lib)
 
-    if lib == 'PALISADE':
+    if lib == 'OpenFHE':
+        if schemename == 'BGV':
+            q0bits = logq[0]
+            qlbits = logq[1]
+        else:  # schemename == 'BFV'
+            q0bits = math.ceil(logq[0] / muls)
+            qlbits = math.ceil(logq[0] / muls)
+
         writelib(lib)
-        logql = max(logq[1], logq[-1])
-        codegen.writepalisade(m, t, logq[0], logql, (muls, const, rots, sums), keyswitch, omega, secret)
+        codegen.openfhe({
+            'scheme': schemename,
+            'd': util.phi(m),
+            't': t,
+            'sdist': {'Ternary': 'UNIFORM_TERNARY', 'Error': 'GAUSSIAN'}[sdist],
+            'depth': muls + 1,
+            'q0bits': q0bits,
+            'qlbits': qlbits,
+            'slots': util.slots(m, t),
+        })
+    if lib == 'PALISADE':
+        if schemename == 'BGV':
+            q0bits = logq[0]
+            qlbits = logq[1]
+        else:  # schemename == 'BFV'
+            q0bits = math.ceil(logq[0] / muls)
+            qlbits = math.ceil(logq[0] / muls)
+
+        writelib(lib)
+        codegen.palisade({
+            'scheme': schemename,
+            'sigma': sigma,
+            'd': util.phi(m),
+            't': t,
+            'sdist': {'Ternary': 'OPTIMIZED', 'Error': 'RLWE'}[sdist],
+            'depth': muls + 1,
+            'q0bits': q0bits,
+            'qlbits': qlbits,
+            'slots': util.slots(m, t),
+            'rots': rots,
+            'sums': sums,
+        })
+    if lib == 'SEAL':
+        if schemename == 'BGV':
+            q0bits = logq[0]
+            qlbits = logq[1]
+            qMbits = logq[-1]
+        else:  # schemename == 'BFV'
+            q0bits = math.ceil(logq[0] / muls)
+            qlbits = math.ceil(logq[0] / muls)
+
+        q = []
+        for i in range(muls):
+            if i == 0:
+                q.append(util.genprime(1 << q0bits, m, batch))
+            if i == 1:
+                start = q[-1] if q0bits == qlbits else 1 << qlbits
+                q.append(util.genprime(start, m, batch))
+
+        if schemename == 'BGV':
+            if qMbits == qlbits:
+                start = q[-1]
+            elif qMbits == q0bits:
+                start = q[0]
+            else:
+                start = 1 << qMbits
+            q.append(util.genprime(start, m, batch))
+
+        writelib(lib)
+        codegen.seal({
+            'scheme': schemename,
+            'd': util.phi(m),
+            'q': q,
+            't': t,
+        })
 
 
 if __name__ == "__main__":

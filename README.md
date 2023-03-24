@@ -1,7 +1,7 @@
 # fhegen
-This is a parameter generator for the leveled BGV scheme, joint work by
-the Crypto Research Center at the Technology Innovation Institute and
-the Chair of Security Engineering at Ruhr University Bochum.
+This is a parameter generator for the leveled BGV and BFV scheme, joint
+work by the Crypto Research Center at the Technology Innovation Institute
+and the Chair of Security Engineering at Ruhr University Bochum.
 
 ## Usage
 Interactive Mode: `python src/interactive.py`
@@ -12,20 +12,19 @@ any problems with the generator.
 ## Output
 ```
 Generated your BGV configuration!
-sec:   147.55
-d:     16384
+model: Base
+sec:   137
+d:     4096
 t:     65537
-logq:  405 (32, 33, 4)
-logP:  11
-slots: 16384
-Generating Makefile, main.cpp and bench.cpp for PALISADE.
+qbits: 65 (31, 30, 4)
+Pbits: 36
 ```
 
-The output provides multiple values: the estimated security `sec`,
-the polynomial degree `d`, the plaintext modulus `t` and the size of the
-ciphertext modulus `logq` including the sizes for the top and bottom modulus
-as well as the middle moduli (see below). In addition, we output the size of
-the key switching modulus `logP` and the amount of plaintext slots available.
+The output provides multiple values: the chosen model 'model', the estimated
+security `sec`, the polynomial degree `d`, the plaintext modulus `t` and the
+size of the ciphertext modulus `qbits` including the sizes for the top and
+bottom modulus as well as the middle moduli (see below). In addition, we output
+the size of the key switching modulus `Pbits`.
 
 The top modulus is the first modulus in the prime chain, that is the modulus
 to be switched down from directly after encryption, and the bottom modulus is

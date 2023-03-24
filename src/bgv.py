@@ -1,152 +1,127 @@
+from sage.all import var
+import config
 import math
 import util
 
 
-class Bounds:
-    def __init__(self, m, t, Vs, Ve, D):
-        d = util.phi(m)
-        self.m = m
-        self.t = t
-        self.Vs = Vs
-        self.Ve = Ve
-        self.D = D
-
-        self.clean = D * t * math.sqrt(d * (1 / 12 + 2 * d * Vs * Ve + Ve))
-        self.switch = D * t * d * math.sqrt(Ve / 12)
-        self.scale = D * t * math.sqrt(d / 12 * (1 + d * Vs))
-        self.const = D * t * math.sqrt(d / 12)
+def _Bclean(m, t, D, Vs, Ve):
+    d = util.phi(m)
+    return D * t * math.sqrt(d * (1 / 12 + 2 * d * Vs * Ve + Ve))
 
 
-class Mods:
-    def __init__(self, B, mul, const, rot, sum, keyswitch, omega, bits=64):
-        self.mul = mul
-        self.const = const
-        self.rot = rot
-        self.sum = sum
-        self.keyswitch = keyswitch
-        self.bits = bits
-        self.omega = omega
+def _Bconst(const, m, t, D, Vs, Ve):
+    if not const:
+        return 1
 
-        self.B = B
-        self.update(B.m, B.t)
+    d = util.phi(m)
+    return D * t * math.sqrt(d / 12)
 
-    def _lenP(self, P=1):
-        if P is not None and self.keyswitch.endswith('RNS'):
-            return max(util.ceil(math.log2(P) / self.bits), 1)
-        else:
-            return 1
 
-    def update(self, m, t):
-        self.B = Bounds(m, t, self.B.Vs, self.B.Ve, self.B.D)
-        self.Bclean = self.B.clean
-        self.Bswitch = self.B.switch
-        self.Bscale = self.B.scale
-        self.Bconst = 1 if self.const == 0 else self.B.const
-        self.depth = 2 * (self.mul + 1) if self.keyswitch == 'BV' and self.rot != 0 else self.mul + 1
-        self.xi = (self.sum * self.Bconst)**2
+def _Bscale(m, t, D, Vs, Ve):
+    d = util.phi(m)
+    return D * t * math.sqrt(d / 12 * (1 + d * Vs))
 
-    def first(self, P):
-        factor = 1
-        if self.rot == 0:
-            factor = 8 * self.xi
-        else:
-            factor = 8 * self.sum**2
-        if self.keyswitch == 'BV' and self.rot != 0:
-            factor *= 4 * (self.depth - 1)
-        if self.keyswitch in ['GHS-RNS', 'Hybrid-RNS']:
-            factor *= self._lenP(P)
 
-        B = 1
-        if self.keyswitch == 'BV-RNS' and self.rot == 0:
-            B = self.Bscale + math.sqrt(self.depth - 1) * self.Bswitch
-        elif self.keyswitch == 'BV-RNS' and self.rot != 0:
-            B = self.Bswitch
-        elif self.keyswitch == 'BV' and self.rot != 0:
-            B = 2 * self.rot * self.omega * math.sqrt(self.depth - 1)
-            B *= math.log(self.Bswitch, self.omega) * self.Bswitch
-            B += self.Bconst * self.Bscale
-        elif self.rot != 0:
-            B = (self.rot + self.Bconst) * self.Bscale
-        else:
-            B = self.Bscale
+def _Bswitch(m, t, D, Vs, Ve, method, L, beta, omega):
+    d = util.phi(m)
+    B = D * t * d * math.sqrt(Ve / 12)
 
-        B = factor * B**2
-        return util.ceil(math.log2(B)) if B > 1 else 0
+    f0 = {
+        'BV': beta * math.sqrt(math.log(1 << (L * config.BITS), beta)),
+        'BV-RNS': beta * math.sqrt(L * math.log(1 << config.BITS, beta)),
+        'GHS': 1 / config.K,
+        'GHS-RNS': math.sqrt(L) / pow(config.K, L),
+        'Hybrid': math.sqrt(math.log(1 << (L * config.BITS), beta)) / config.K,
+        'Hybrid-RNS': math.sqrt(omega * L) / pow(config.K, L)
+    }[method]
+    f1 = {
+        'BV': 0,
+        'BV-RNS': 0,
+        'GHS': 1,
+        'GHS-RNS': L,
+        'Hybrid': 1,
+        'Hybrid-RNS': math.ceil(L / omega)
+    }[method]
 
-    def middle(self, P=1):
-        factor = 1
-        if self.rot == 0:
-            factor = 4 * self.xi
-        else:
-            factor = 4 * self.sum
-        if self.keyswitch == 'BV' and self.rot != 0:
-            factor /= 4
-        if self.keyswitch in ['GHS-RNS', 'Hybrid-RNS']:
-            factor *= math.sqrt(self._lenP(P))
+    return f0 * B + f1 * _Bscale(m, t, D, Vs, Ve)
 
-        B = 1
-        if self.keyswitch == 'BV-RNS' and self.rot == 0:
-            B = self.Bscale + math.sqrt(self.depth - 1) * self.Bswitch
-        elif self.keyswitch == 'BV-RNS' and self.rot != 0:
-            B = self.rot * math.sqrt(self.depth - 1) * self.Bconst * self.Bswitch
-        elif self.keyswitch == 'BV' and self.rot != 0:
-            B = 4 * self.rot * self.omega * math.sqrt(self.depth - 1)
-            B *= math.log(self.Bswitch, self.omega) * self.Bswitch
-            B += self.Bconst * self.Bscale
-            B *= self.Bconst
-        elif self.rot == 0:
-            B = self.Bscale
-        else:
-            B = (self.rot + self.Bconst) * self.Bconst * self.Bscale
 
-        B = factor * B
-        return util.ceil(math.log2(B)) if B > 1 else 0
+def _fscale(method, L, beta, omega):
+    return math.sqrt({
+        'BV': 1,
+        'BV-RNS': 1,
+        'GHS': 1,
+        'GHS-RNS': L,
+        'Hybrid': 1,
+        'Hybrid-RNS': math.ceil(L / omega)
+    }[method])
 
-    def last(self, P=1):
-        num = self.Bclean
-        if self.keyswitch == 'BV' and self.rot != 0:
-            num *= self.Bconst
 
-        div = self.Bscale
-        if self.keyswitch == 'BV-RNS' and self.rot == 0:
-            div += 2 * math.sqrt(self.depth - 1) * self.Bswitch
-        elif self.keyswitch == 'BV-RNS' and self.rot != 0:
-            div = 16 * self.sum**2 * self.rot**2 * (self.depth - 1)
-            div = div * self.Bswitch**2 - self.Bscale
-        elif self.keyswitch == 'BV' and self.rot != 0:
-            div = 2 * self.rot * self.omega * math.sqrt(self.depth - 1)
-            div *= math.log(self.Bswitch, self.omega) * self.Bswitch
-        elif self.keyswitch in ['GHS-RNS', 'Hybrid-RNS'] and self.rot == 0:
-            div *= 2 * math.sqrt(self._lenP(P)) - 1
-        elif self.keyswitch in ['GHS-RNS', 'Hybrid-RNS'] and self.rot != 0:
-            div *= math.sqrt(self._lenP(P)) * ((self.rot / self.Bconst + 2) - 1)
-        elif self.keyswitch in ['GHS', 'Hybrid'] and self.rot != 0:
-            div *= self.rot / self.Bconst + 1
+def _B(ops, Bargs, kswargs):
+    model = ops['model']
+    sums = ops['sums']
+    rots = ops['rots']
+    const = ops['const']
 
-        B = num / div
-        return util.ceil(math.log2(B)) if B > 1 else 0
+    Bconst = _Bconst(const, **Bargs)
+    Bscale = _Bscale(**Bargs)
+    Bswitch = _Bswitch(**Bargs, **kswargs)
+    fscale = _fscale(**kswargs)
 
-    def switch(self, logq, K=100):
-        qLneg3 = 2**(sum(logq[:-2]) - len(logq[:-2]))
-        pLneg2 = 2**(logq[-2] - 1)
-        qLneg2 = qLneg3 * pLneg2
+    B = var('B')
+    f = {
+        'Base': (sums * Bconst * B)**2 / (B - fscale * Bscale),
+        'Model1': (sums**2 * (Bconst * B + rots * Bswitch)**2 + Bswitch) / (B - fscale * Bscale),
+        'Model2': (sums**2 * Bconst**2 * (B + rots * Bswitch)**2 + Bswitch) / (B - fscale * Bscale),
+        'OpenFHE': (sums * B**2 + (rots + 1) * Bswitch) / (B - fscale * Bscale)
+    }[model]
+    return f.find_local_minimum(fscale * Bscale, 1 << config.BITS)[1]
 
-        factor = 1
-        if self.keyswitch in ['GHS', 'GHS-RNS'] and self.rot == 0:
-            factor = K * qLneg3
-        elif self.keyswitch in ['GHS', 'GHS-RNS'] and self.rot != 0:
-            factor = K * qLneg2
-        else:
-            factor = K
-        if self.keyswitch == 'GHS-RNS' and self.rot == 0:
-            factor *= math.sqrt(self.depth - 2)
-        if self.keyswitch == 'GHS-RNS' and self.rot != 0:
-            factor *= math.sqrt(self.depth - 1)
-        if self.keyswitch == 'Hybrid-RNS':
-            factor *= pLneg2**util.ceil(self.depth / self.omega)
-            factor *= math.sqrt(self.omega * (self.depth - 1))
-        if self.keyswitch == 'Hybrid':
-            factor *= self.omega * math.sqrt(math.log(qLneg2, self.omega))
 
-        B = factor * util.ceil(self.Bswitch) // util.ceil(self.Bscale)
-        return util.ceil(math.log2(B)) if B > 1 else 0
+def _B0(ops, B, Bargs, kswargs, c=1):
+    model = ops['model']
+    sums = ops['sums']
+    rots = ops['rots']
+    const = ops['const']
+
+    Bconst = _Bconst(const, **Bargs)
+    Bswitch = _Bswitch(**Bargs, **kswargs)
+
+    return {
+        'Base': 2 * c * (sums * Bconst * B),
+        'Model1': 2 * c * sums**2 * (Bconst * B + rots * Bswitch)**2,
+        'Model2': 2 * c * sums**2 * Bconst**2 * (B + rots * Bswitch)**2,
+        'OpenFHE': 2 * c * sums * B**2 + rots * Bswitch
+    }[model]
+
+
+def _logp0(B0):
+    return util.clog2(B0)
+
+
+def _logpi(B):
+    return util.clog2(B)
+
+
+def _logpM(B, Bargs):
+    Bclean = _Bclean(**Bargs)
+    Bscale = _Bscale(**Bargs)
+
+    return util.clog2(Bclean / (B - Bscale))
+
+
+def _logP(logq, kswargs, K=config.K):
+    return sum(logq[1:-1]) + int(math.log2(K))
+
+
+def logqP(ops, Bargs, kswargs, sdist):
+    B = _B(ops, Bargs, kswargs)
+    B0 = _B0(ops, B, Bargs, kswargs)
+
+    logq = [_logp0(B0)]
+    for _ in range(ops['muls'] - 1):
+        logq.append(_logpi(B))
+    logq.append(_logpM(B, Bargs))
+    logP = _logP(logq, kswargs)
+
+    return logq, logP
