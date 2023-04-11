@@ -91,9 +91,24 @@ def _logq(ops, Bargs, kswargs, sdist):
     return util.clog2(D * math.sqrt(8 * V))
 
 
-def _logP(logq, kswargs):
-    # TODO: logP for BFV
-    return 0
+def _logP(logq, kswargs, K=config.K):
+    method = kswargs['method']
+    beta = kswargs['beta']
+    omega = kswargs['omega']
+
+    L = len(logq)
+    logp = logq[1]
+    logK = int(math.log2(K))
+    logb = int(math.log2(beta))
+
+    if method.startswith('BV'):
+        return None
+    elif method.startswith('GHS'):
+        return logK + L * logp
+    elif method == 'Hybrid':
+        return logK + logb + int(math.log2(math.sqrt(L * logp / logb)))
+    else:  # method == 'Hybrid-RNS'
+        return logK + int(math.log2(math.sqrt(omega * L))) + int(math.ceil(L * logp / omega))
 
 
 def logqP(ops, Bargs, kswargs, sdist):

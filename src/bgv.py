@@ -111,7 +111,23 @@ def _logpM(B, Bargs):
 
 
 def _logP(logq, kswargs, K=config.K):
-    return sum(logq[1:-1]) + int(math.log2(K))
+    method = kswargs['method']
+    beta = kswargs['beta']
+    omega = kswargs['omega']
+
+    L = len(logq)
+    logp = logq[1]
+    logK = int(math.log2(K))
+    logb = int(math.log2(beta))
+
+    if method.startswith('BV'):
+        return None
+    elif method.startswith('GHS'):
+        return logK + L * logp
+    elif method == 'Hybrid':
+        return logK + logb + int(math.log2(math.sqrt(L * logp / logb)))
+    else:  # method == 'Hybrid-RNS'
+        return logK + int(math.log2(math.sqrt(omega * L))) + int(math.ceil(L * logp / omega))
 
 
 def logqP(ops, Bargs, kswargs, sdist):

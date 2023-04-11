@@ -394,7 +394,8 @@ def main():
 
         while True:
             logq, logP = scheme.logqP(ops, Bargs, kswargs, sdist)
-            if util.estsecurity(m, sum(logq) + logP, sdist) > sec:
+            log = sum(logq) + logP if logP else sum(logq)
+            if logP and util.estsecurity(m, log, sdist) > sec:
                 break
 
             m <<= 1
