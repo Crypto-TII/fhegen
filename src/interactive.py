@@ -401,7 +401,8 @@ def main():
             m <<= 1
             Bargs['m'] = m
 
-            t = util.gent(m, **targs)
+            if gent:
+                t = util.gent(m, **targs)
             targs['t'] = t
             Bargs['t'] = t
     else:
