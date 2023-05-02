@@ -70,7 +70,7 @@ def _B(ops, Bargs, kswargs):
 
     B = var('B')
     f = {
-        'Base': (sums * Bconst * B)**2 / (B - fscale * Bscale),
+        'Base': ((sums * Bconst * B)**2 + Bswitch) / (B - fscale * Bscale),
         'Model1': (sums**2 * (Bconst * B + rots * Bswitch)**2 + Bswitch) / (B - fscale * Bscale),
         'Model2': (sums**2 * Bconst**2 * (B + rots * Bswitch)**2 + Bswitch) / (B - fscale * Bscale),
         'OpenFHE': (sums * B**2 + (rots + 1) * Bswitch) / (B - fscale * Bscale)
@@ -88,7 +88,7 @@ def _B0(ops, B, Bargs, kswargs, c=1):
     Bswitch = _Bswitch(**Bargs, **kswargs)
 
     return {
-        'Base': 2 * c * (sums * Bconst * B),
+        'Base': 2 * c * (sums * Bconst * B)**2,
         'Model1': 2 * c * sums**2 * (Bconst * B + rots * Bswitch)**2,
         'Model2': 2 * c * sums**2 * Bconst**2 * (B + rots * Bswitch)**2,
         'OpenFHE': 2 * c * sums * B**2 + rots * Bswitch
