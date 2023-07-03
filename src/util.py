@@ -21,10 +21,10 @@ def estsecurity(m, logq, sdist):
         gamma = 17.88
         delta = 0.65
     elif sdist == 'Error':
-        alpha = 8.82
-        beta = 0.89
-        gamma = 10.40
-        delta = -0.02
+        alpha = 3.87
+        beta = 0.74
+        gamma = 12.72
+        delta = 0.17
 
     est = -math.log2(alpha * logq / d) * beta * d / logq + gamma * pow(logq / d, delta) * math.log2(d / logq)
     return max(int(math.floor(est)), 0)
