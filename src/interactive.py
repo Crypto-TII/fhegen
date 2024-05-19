@@ -14,12 +14,12 @@ def pconfig(scheme, model, sec, m, t, logq, logP=None, lib=None):
         f"t:     {t}"))
 
     if len(logq) > 1:
-        print(f"qbits: {sum(logq)} ({logq[0]}, {logq[1]}, {logq[-1]})")
+        print(f"logq:  {sum(logq)} ({logq[0]}, {logq[1]}, {logq[-1]})")
     else:
-        print(f"qbits: {logq[0]}")
+        print(f"logq:  {logq[0]}")
 
     if logP:
-        print(f"Pbits: {logP}")
+        print(f"logP:  {logP}")
     if lib:
         print(f"slots: {util.slots(m, t)}")
 

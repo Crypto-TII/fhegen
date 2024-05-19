@@ -16,8 +16,8 @@ model: Base
 sec:   137
 d:     4096
 t:     65537
-qbits: 65 (31, 30, 4)
-Pbits: 36
+logq:  65 (31, 30, 4)
+logP:  36
 ```
 
 The output provides multiple values: the chosen model 'model', the estimated
