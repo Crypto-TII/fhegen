@@ -10,7 +10,7 @@ def pconfig(scheme, model, sec, m, t, logq, logP=None, lib=None):
         f"\nGenerated your {scheme} configuration!\n"
         f"model: {model}\n"
         f"sec:   {sec}\n"
-        f"d:     {util.phi(m)}\n"
+        f"n:     {util.phi(m)}\n"
         f"t:     {t}"))
 
     if len(logq) > 1:
@@ -422,7 +422,7 @@ def main():
         writelib(lib)
         codegen.openfhe({
             'scheme': schemename,
-            'd': util.phi(m),
+            'n': util.phi(m),
             't': t,
             'sdist': {'Ternary': 'UNIFORM_TERNARY', 'Error': 'GAUSSIAN'}[sdist],
             'depth': muls + 1,
@@ -442,7 +442,7 @@ def main():
         codegen.palisade({
             'scheme': schemename,
             'sigma': sigma,
-            'd': util.phi(m),
+            'n': util.phi(m),
             't': t,
             'sdist': {'Ternary': 'OPTIMIZED', 'Error': 'RLWE'}[sdist],
             'depth': muls + 1,
@@ -481,7 +481,7 @@ def main():
         writelib(lib)
         codegen.seal({
             'scheme': schemename,
-            'd': util.phi(m),
+            'n': util.phi(m),
             'q': q,
             't': t,
         })

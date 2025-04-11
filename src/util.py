@@ -13,7 +13,7 @@ def phi(x):
 
 
 def estsecurity(m, logq, sdist):
-    d = phi(m)
+    n = phi(m)
 
     if sdist == 'Ternary':
         alpha = 0.05
@@ -26,7 +26,7 @@ def estsecurity(m, logq, sdist):
         gamma = 12.72
         delta = 0.17
 
-    est = -math.log2(alpha * logq / d) * beta * d / logq + gamma * pow(logq / d, delta) * math.log2(d / logq)
+    est = -math.log2(alpha * logq / n) * beta * n / logq + gamma * pow(logq / n, delta) * math.log2(n / logq)
     return max(int(math.floor(est)), 0)
 
 
@@ -42,7 +42,7 @@ def genprime(start, m=0, batch=False):
 
 
 def gent(m, gen, t, logt, batch):
-    if gent:
+    if gen:
         return genprime(2**(logt - 1), m, batch)
     else:
         return t

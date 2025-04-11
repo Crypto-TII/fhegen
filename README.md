@@ -76,7 +76,7 @@ We denote the plaintext modulus by `t` and the ciphertext modulus by `q`, which 
 Generated your BFV configuration!
 model: Base
 sec:   116
-d:     4096
+n:     4096
 t:     65537
 logq:  84
 logP:  35
@@ -89,7 +89,7 @@ In the case of BGV, the ciphertext modulus `q` is a product of primes:
 Generated your BGV configuration!  
 model: Base                 # Chosen circuit model (e.g., Base)
 sec:   137                  # Estimated security level
-d:     4096                 # Polynomial degree
+n:     4096                 # Polynomial degree
 t:     65537                # Plaintext modulus
 logq:  65 (31, 30, 4)       # Ciphertext modulus size, split into bottom, middle, and top moduli
 logP:  36                   # Key-switching modulus size
