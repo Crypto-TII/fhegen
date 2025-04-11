@@ -16,31 +16,31 @@ def _f(x, sdist):
 
 
 def _Vclean(m, t, D, Vs, Ve):
-    d = util.phi(m)
-    return t**2 * d * Ve * (Vs + Ve)
+    n = util.phi(m)
+    return t**2 * n * Ve * (Vs + Ve)
 
 
 def _Vconst(const, m, t, D, Vs, Ve):
     if not const:
         return 1
 
-    d = util.phi(m)
-    return t**2 * d / 12
+    n = util.phi(m)
+    return t**2 * n / 12
 
 
 def _Vmul(V, sdist, m, t, D, Vs, Ve):
-    d = util.phi(m)
-    return t**2 * d**2 * Vs / 6 * V * _f(2, sdist)
+    n = util.phi(m)
+    return t**2 * n**2 * Vs / 6 * V * _f(2, sdist)
 
 
 def _Vscale(m, t, D, Vs, Ve):
-    d = util.phi(m)
-    return t**2 / 12 * (1 + d * Vs)
+    n = util.phi(m)
+    return t**2 / 12 * (1 + n * Vs)
 
 
 def _Vswitch(m, t, D, Vs, Ve, method, L, beta, omega):
-    d = util.phi(m)
-    V = t**2 * d * Ve / 12
+    n = util.phi(m)
+    V = t**2 * n * Ve / 12
 
     f0 = {
         'BV': beta**2 * math.log(1 << (L * config.BITS), beta),

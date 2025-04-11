@@ -5,26 +5,25 @@ import util
 
 
 def _Bclean(m, t, D, Vs, Ve):
-    d = util.phi(m)
-    return D * t * math.sqrt(d * (1 / 12 + 2 * d * Vs * Ve + Ve))
-
+    n = util.phi(m)
+    return D * t * math.sqrt(n * (1 / 12 + 2 * n * Vs * Ve + Ve))
 
 def _Bconst(const, m, t, D, Vs, Ve):
     if not const:
         return 1
 
-    d = util.phi(m)
-    return D * t * math.sqrt(d / 12)
+    n = util.phi(m)
+    return D * t * math.sqrt(n / 12)
 
 
 def _Bscale(m, t, D, Vs, Ve):
-    d = util.phi(m)
-    return D * t * math.sqrt(d / 12 * (1 + d * Vs))
+    n = util.phi(m)
+    return D * t * math.sqrt(n / 12 * (1 + n * Vs))
 
 
 def _Bswitch(m, t, D, Vs, Ve, method, L, beta, omega):
-    d = util.phi(m)
-    B = D * t * d * math.sqrt(Ve / 12)
+    n = util.phi(m)
+    B = D * t * n * math.sqrt(Ve / 12)
 
     f0 = {
         'BV': beta * math.sqrt(math.log(1 << (L * config.BITS), beta)),

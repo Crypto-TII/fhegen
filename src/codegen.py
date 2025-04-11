@@ -10,7 +10,7 @@ def openfhe(params):
             f"\tparams.SetPlaintextModulus({params['t']});\n"
             f"\tparams.SetSecurityLevel(HEStd_NotSet);\n"
             f"\tparams.SetSecretKeyDist({params['sdist']});\n"
-            f"\tparams.SetRingDim({params['d']});\n"
+            f"\tparams.SetRingDim({params['n']});\n"
             f"\tparams.SetFirstModSize({params['q0bits']});\n"
             f"\tparams.SetScalingModSize({params['qlbits']});\n"
             f"\tparams.SetBatchSize({params['slots']});\n"
@@ -24,7 +24,7 @@ def openfhe(params):
             f"\tparams.SetPlaintextModulus({params['t']});\n"
             f"\tparams.SetSecurityLevel(HEStd_NotSet);\n"
             f"\tparams.SetSecretKeyDist({params['sdist']});\n"
-            f"\tparams.SetRingDim({params['d']});\n"
+            f"\tparams.SetRingDim({params['n']});\n"
             f"\tparams.SetFirstModSize({params['q0bits']});\n"
             f"\tparams.SetScalingModSize({params['qlbits']});\n"
             f"\tparams.SetBatchSize({params['slots']});\n\n"
@@ -45,7 +45,7 @@ def palisade(params):
             f"\t\t/* standard deviation */ {params['sigma']},\n"
             f"\t\t/* maximum depth      */ 2,\n"
             f"\t\t/* key distribution   */ {params['sdist']},\n"
-            f"\t\t/* ring dimension     */ {params['d']},\n"
+            f"\t\t/* ring dimension     */ {params['n']},\n"
             f"\t\t/* log2(p0)           */ {params['q0bits']},\n"
             f"\t\t/* log2(pl)           */ {params['qlbits']},\n"
             f"\t\t/* batch size         */ {params['slots']},\n"
@@ -64,7 +64,7 @@ def palisade(params):
             f"\t\t/* key distribution   */ {params['sdist']},\n"
             f"\t\t/* maximum depth      */ 2,\n"
             f"\t\t/* log2(pi)           */ {params['qlbits']},\n"
-            f"\t\t/* ring dimension     */ {params['d']});\n\n"
+            f"\t\t/* ring dimension     */ {params['n']});\n\n"
             f"\t// see {config.PALISADE_LINK_BFV} for a full PALISADE BFV example\n"
             f"\t// ...\n\n"))
 
@@ -81,7 +81,7 @@ def seal(params):
     if params['scheme'] == 'BGV':
         ctx = ((
             f"\tEncryptionParameters params(scheme_type::bgv);\n"
-            f"\tparams.set_poly_modulus_degree({params['d']});\n"
+            f"\tparams.set_poly_modulus_degree({params['n']});\n"
             f"\tparams.set_coeff_modulus({mvec});\n"
             f"\tparams.set_plain_modulus({params['t']});\n\n"
             f"\t// see {config.SEAL_LINK_BGV} for a full SEAL BGV example\n"
@@ -89,7 +89,7 @@ def seal(params):
     elif params['scheme'] == 'BFV':
         ctx = ((
             f"\tEncryptionParameters params(scheme_type::bfv);\n"
-            f"\tparams.set_poly_modulus_degree({params['d']});\n"
+            f"\tparams.set_poly_modulus_degree({params['n']});\n"
             f"\tparams.set_coeff_modulus({mvec});\n"
             f"\tparams.set_plain_modulus({params['t']});\n\n"
             f"\t// see {config.SEAL_LINK_BGV} for a full SEAL BFV example\n"
