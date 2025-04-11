@@ -3,6 +3,7 @@
 [![BGV Parameters](https://img.shields.io/badge/BGV%20Parameters-Download-green)](https://eprint.iacr.org/2022/706.pdf)
 [![BFV Parameters](https://img.shields.io/badge/BFV%20Parameters-Download-red)](https://eprint.iacr.org/2023/600.pdf)
 [![Slack](https://img.shields.io/badge/slack-@fhegen-yellow.svg?logo=slack)](https://join.slack.com/t/fhegen/shared_invite/zt-2rtezhwty-i9h4Vmcc~Oiw0bSwgHxTMw)
+[![Docker Guide](https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=orange)](Dockerfile)
 
 ---
 
@@ -31,6 +32,36 @@ FheGEN can be run interactively from the terminal to generate customized encrypt
     ```md
     sage -python3 src/interactive.py
     ```
+   
+## Docker Support 🐳
+
+FheGEN includes a pre-configured **Dockerfile** for seamless deployment. Users can build and run the containerized environment as needed.
+> 💡 **Note:** You must have [Docker installed](https://docs.docker.com/get-docker/) on your system to use this feature.
+
+### Build the Docker Image
+
+To create the Docker image, navigate to the project root directory and execute:
+
+```md
+docker build -t fhegen .
+```
+
+### Launch an Interactive Container
+
+
+To run the Docker container interactively, use the following command:
+
+```md 
+docker run -it --name fhegen-dev --entrypoint /bin/bash fhegen
+```
+
+Once inside the container, manually run:
+
+```md
+sage -python3 src/interactive.py
+```
+
+**Note:** Feel free to customize the Docker setup to suit your workflow such as adding volumes (via docker-compose), changing entrypoints, or applying other preferences.
 
 ## Usage
 
